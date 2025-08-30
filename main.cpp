@@ -4,6 +4,7 @@
 #include <vector>
 #include <algorithm>
 #include "Vector2D.h"
+#include "TrailPoint.h"
 
 using namespace std;
 
@@ -11,8 +12,7 @@ using namespace std;
 
 void drawCircle(SDL_Renderer* renderer, int centerX, int centerY, int radius, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
     SDL_SetRenderDrawColor(renderer, r, g, b, a);
-    
-    
+      
     for (int dy = -radius; dy <= radius; dy++) {
         int dx = static_cast<int>(std::sqrt(radius * radius - dy * dy));
         SDL_RenderDrawLine(renderer, centerX - dx, centerY + dy, centerX + dx, centerY + dy);
@@ -20,12 +20,7 @@ void drawCircle(SDL_Renderer* renderer, int centerX, int centerY, int radius, Ui
 }
 
 // Структура для хранения информации о следе
-struct TrailPoint {
-    Vector2D position;
-    float radius;
-    Uint8 alpha;// unsigned int 8 - количество нужных битов
-    Uint32 creationTime;
-};
+
 
 int main(int argc, char* argv[]) {
     // Инициализация SDL
