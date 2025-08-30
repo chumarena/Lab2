@@ -3,100 +3,16 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
+#include "Vector2D.h"
 
 using namespace std;
 
-// Класс геометрический вектор
-class Vector2D {
-private:
 
-    float x, y;
 
-public:
-    
-
-    // Конструкторы
-    Vector2D(float x = 0, float y = 0) : x(x), y(y) {}
-
-    // Операторы
-    Vector2D operator+(const Vector2D& other) const {//зачем const у функции
-        return Vector2D(x + other.x, y + other.y);
-    }
-
-    Vector2D operator-(const Vector2D& other) const {
-        return Vector2D(x - other.x, y - other.y);
-    }
-
-    Vector2D operator*(float scalar) const {
-        return Vector2D(x * scalar, y * scalar);
-    }
-
-    Vector2D operator/(float scalar) const {
-        return Vector2D(x / scalar, y / scalar);
-    }
-
-    Vector2D& operator+=(const Vector2D& other) {
-        x += other.x;
-        y += other.y;
-        return *this;
-    }
-
-    Vector2D& operator-=(const Vector2D& other) {
-        x -= other.x;
-        y -= other.y;
-        return *this;
-    }
-
-    Vector2D& operator*=(float scalar) {
-        x *= scalar;
-        y *= scalar;
-        return *this;
-    }
-
-    Vector2D& operator/=(float scalar) {
-        x /= scalar;
-        y /= scalar;
-        return *this;
-    }
-
-    
-    // Проверка на нулевой вектор
-    bool isZero() const {
-        return x == 0 && y == 0;
-    }
-};
-
-// Быстрая функция для рисования круга
 void drawCircle(SDL_Renderer* renderer, int centerX, int centerY, int radius, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
     SDL_SetRenderDrawColor(renderer, r, g, b, a);
     
-    // Используем алгоритм Брезенхэма для рисования круга
-    int x = radius;
-    int y = 0;
-    int err = 0;
-
-    while (x >= y) {
-        SDL_RenderDrawPoint(renderer, centerX + x, centerY + y);
-        SDL_RenderDrawPoint(renderer, centerX + y, centerY + x);
-        SDL_RenderDrawPoint(renderer, centerX - y, centerY + x);
-        SDL_RenderDrawPoint(renderer, centerX - x, centerY + y);
-        SDL_RenderDrawPoint(renderer, centerX - x, centerY - y);
-        SDL_RenderDrawPoint(renderer, centerX - y, centerY - x);
-        SDL_RenderDrawPoint(renderer, centerX + y, centerY - x);
-        SDL_RenderDrawPoint(renderer, centerX + x, centerY - y);
-
-
-        if (err <= 0) {
-            y += 1;
-            err += 2*y + 1;
-        }
-        if (err > 0) {
-            x -= 1;
-            err -= 2*x + 1;
-        }
-    }
     
-    // Заливаем круг горизонтальными линиями
     for (int dy = -radius; dy <= radius; dy++) {
         int dx = static_cast<int>(std::sqrt(radius * radius - dy * dy));
         SDL_RenderDrawLine(renderer, centerX - dx, centerY + dy, centerX + dx, centerY + dy);
@@ -147,7 +63,7 @@ int main(int argc, char* argv[]) {
     // Параметры точки
     Vector2D position(WIDTH / 2, HEIGHT / 2);
     Vector2D velocity(0, 0);
-    const float SPEED = 2.0f;
+     float SPEED = 2.0f;
 
     // Параметры следа
     std::vector<TrailPoint> trail;
@@ -159,6 +75,12 @@ int main(int argc, char* argv[]) {
     // Переменная для отслеживания движения
     bool isMoving = false;
 
+    // Флаги для отслеживания нажатых клавиш
+    bool upPressed = false;
+    bool downPressed = false;
+    bool leftPressed = false;
+    bool rightPressed = false;
+
     // Основной цикл
     bool running = true;
     SDL_Event event;
@@ -166,8 +88,6 @@ int main(int argc, char* argv[]) {
     
     while (running) {
         Uint32 currentTime = SDL_GetTicks();
-        //float deltaTime = (currentTime - lastTime) / 1000.0f;
-        //lastTime = currentTime;
 
         // Обработка событий
         while (SDL_PollEvent(&event)) {
@@ -175,39 +95,36 @@ int main(int argc, char* argv[]) {
                 running = false;
             } else if (event.type == SDL_KEYDOWN) {
                 switch (event.key.keysym.sym) {
-                    case SDLK_UP:
-                        velocity.y = -SPEED;// все ошибки можно исправить через getter и setter
-                        break;
-                    case SDLK_DOWN:
-                        velocity.y = SPEED;
-                        break;
-                    case SDLK_LEFT:
-                        velocity.x = -SPEED;
-                        break;
-                    case SDLK_RIGHT:
-                        velocity.x = SPEED;
-                        break;
+                    case SDLK_UP: upPressed = true; break;
+                    case SDLK_DOWN: downPressed = true; break;
+                    case SDLK_LEFT: leftPressed = true; break;
+                    case SDLK_RIGHT: rightPressed = true; break;
                 }
             } else if (event.type == SDL_KEYUP) {
                 switch (event.key.keysym.sym) {
-                    case SDLK_UP:
-                    case SDLK_DOWN:
-                        velocity.y = 0;
-                        break;
-                    case SDLK_LEFT:
-                    case SDLK_RIGHT:
-                        velocity.x = 0;
-                        break;
+                    case SDLK_UP: upPressed = false; break;
+                    case SDLK_DOWN: downPressed = false; break;
+                    case SDLK_LEFT: leftPressed = false; break;
+                    case SDLK_RIGHT: rightPressed = false; break;
                 }
             }
         }
+
+        // Обновление скорости на основе нажатых клавиш
+        velocity = Vector2D(0, 0);
+        if (upPressed) velocity += Vector2D(0, -SPEED);
+        if (downPressed) velocity += Vector2D(0, SPEED);
+        if (leftPressed) velocity += Vector2D(-SPEED, 0);
+        if (rightPressed) velocity += Vector2D(SPEED, 0);
 
         // Обновление позиции точки
         position += velocity;
         
         // Ограничение движения в пределах окна
-        position.x = std::max(5.0f, std::min((float)WIDTH - 5, position.x));//getter setter надо юзать, напрямую нельзя изменять
-        position.y = std::max(5.0f, std::min((float)HEIGHT - 5, position.y));
+        
+        
+        
+        position.setPosition(position.getX(), position.getY(), 5.0f, WIDTH - 5.0f, 5.0f, HEIGHT - 5.0f);
 
         // Проверка, движется ли точка
         isMoving = !velocity.isZero();
@@ -246,16 +163,16 @@ int main(int argc, char* argv[]) {
         // Отрисовка следов (тусклые)
         for (const auto& point : trail) {
             drawCircle(renderer, 
-                      static_cast<int>(point.position.x), 
-                      static_cast<int>(point.position.y), 
+                      static_cast<int>(point.position.getX()), 
+                      static_cast<int>(point.position.getY()), 
                       static_cast<int>(point.radius),
                       200, 200, 200, point.alpha);
         }
 
         // Отрисовка текущей точки (яркая)
         drawCircle(renderer, 
-                  static_cast<int>(position.x), 
-                  static_cast<int>(position.y), 
+                  static_cast<int>(position.getX()), 
+                  static_cast<int>(position.getY()), 
                   5,
                   255, 255, 255, 255);
 
